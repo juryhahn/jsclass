@@ -1,0 +1,14 @@
+moveBall [animation of objects]
+- checkHit (collision detection)
+- bounce ball after hit
+
+movePaddle [respond to key input]
+
+
+
+
+
+
+
+
+
