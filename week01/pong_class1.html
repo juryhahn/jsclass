@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Title of the document</title>
+<script src="jquery.js"></script>
+<script type='text/javascript'>
+	var ball;
+	var moveBall;
+	var shouldAnimate = true;
+	var isAnimating = false;
+	
+	//setTimeout( xxx,  1000); // xxx is executed after 1000 ms
+	//setInterval( xxx, 1000); // xxx is executed every 1000 ms
+	
+	$(document).ready( function() {
+		ball=$('#ball');
+	});
+	
+	function moveBall(){
+		var current_left = parseInt(ball.css('left')); // 0
+		var new_left = current_left + 10; // 10
+		console.log(new_left, current_left);
+		ball.css('left', new_left); // 10? 10px
+	};
+	
+	
+	function draw() {
+		moveBall();
+		if (shouldAnimate) {
+			setTimeout(draw, 1000);
+		}
+	}
+	
+	function startAnimation() {
+		draw();
+		isAnimating = true;
+	}
+</script>
+<style type='text/css'>
+	#ball {
+		background-color:#FF0000;
+		height:20px;
+		width:20px;	
+		position: absolute;
+		top:0px;
+		left:0px;
+	}
+</style>
+
+
+
+</head>
+
+<body>
+	<a href='#' onclick='startAnimation(); return false;'>START</a> <!-- return false means not to execute the default a href behavior -->
+	<div id="ball">
+		
+	</div>
+</body>
+
+</html>
+<!--
+
+READING:
+http://www.barelyfitz.com/screencast/html-training/css/positioning/
+
+hw:
+* make it so that if you click 'start' multiple times it doesn't affect the animation (meaning it doesn't change the speed of the ball)
+* make a link to stop the animation
+* make a link to change the direction of the movement to go left
+  - make 4 links to set the direction (up/down/left/right)
+
+extra credit:
+* make it so that you can press any key to start the animation (search for jquery listen keypress)
+-->

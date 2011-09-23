@@ -1,0 +1,171 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Title of the document</title>
+<script src="jquery.js"></script>
+<script type='text/javascript'>
+	var ball;
+	var moveBall;
+	var shouldAnimate = true;
+	var shouldGoRight = true;
+	var shouldGoDown = true;
+	var isAnimating = false;
+
+	$(document).ready( function() {
+		ball=$('#ball');
+	});
+	
+	// hw: 
+	// *refactor calculateNewBallXPosition and calculateNewBallYPosition into calculateNewBallPosition
+	// calculateNewBallPosition should return an array just like getBallPosition does
+	// *refactor setBallXPosition and setBallYPosition into setBallPosition, which should take (arguments) either
+	// an array of [x,y] or x and y values
+	// * add two links, a "+" and a "-" to increase or decrease the speed of the ball
+	//
+	// extra credit: map the up/down/left/right keys to the directions -- search jquery docs for keypress
+	
+	function moveBall() {
+		var current_pos = getBallPosition();
+		var current_Xpos = current_pos[0];
+		var current_Ypos = current_pos[1];
+		
+		var new_Xpos = calculateNewBallXPosition(current_Xpos);
+		setBallXPosition(new_Xpos);
+		
+		var new_Ypos = calculateNewBallYPosition(current_Ypos);
+		setBallYPosition(new_Ypos);		
+	};
+	
+	function setDirection(axis, direction) {
+		if (axis == 'x') {
+			if (direction == 'right') {
+				shouldGoRight = true;
+			}
+			if (direction == 'left') {
+				shouldGoRight = false;
+			}
+		}
+		
+		if (axis == 'y') {
+			if (direction == 'up') {
+				shouldGoDown = false;
+			}
+			if (direction == 'down') {
+				shouldGoDown = true;
+			}
+		}
+	}
+	
+	// INTERFACE FUNCTIONS //
+	
+	function setDirectionRight(){
+		setDirection('x','right');
+	}
+	
+	function setDirectionLeft(){
+		setDirection('x','left');
+	}
+	
+	function setDirectionDown(){
+		setDirection('y','down');
+	}
+	
+	function setDirectionUp(){
+		setDirection('y', 'up');
+	}	
+	
+	// refactoring 
+	
+	
+	function getBallPosition() {
+		var current_Xpos = parseInt(ball.css('left'));
+		var current_Ypos = parseInt(ball.css('top'));
+		return [current_Xpos,current_Ypos];
+	}
+
+	function calculateNewBallXPosition(current_pos) {
+		if (shouldGoRight) {
+			var new_pos = current_pos + 10; 		
+		} else {
+			var new_pos = current_pos - 10; 
+		}
+		return new_pos;		
+	}
+
+	function calculateNewBallYPosition(current_pos) {
+		if (shouldGoDown) {
+			var new_pos = current_pos + 10; 		
+		} else {
+			var new_pos = current_pos - 10; 
+		}
+		return new_pos;		
+	}
+		
+	function setBallXPosition(new_pos) {
+		ball.css('left', new_pos); 
+	}	
+
+	function setBallYPosition(new_pos) {
+		ball.css('top', new_pos); 
+	}		
+	
+
+	
+		
+	function draw() {
+		moveBall();
+		if (shouldAnimate) {
+			setTimeout(draw, 100);
+		}
+	}
+	
+	function startAnimation() {
+		shouldAnimate = true;
+		draw();
+	}
+	
+	function stopAnimation() {
+		shouldAnimate = false;
+	}
+</script>
+
+<style type='text/css'>
+	#ball {
+		background-color:#FF0000;
+		height:20px;
+		width:20px;	
+		position: absolute;
+		top:0px;
+		left:0px;
+	}
+</style>
+
+</head>
+
+<body>
+	<a href='#' onclick='startAnimation(); return false;'>START</a> <!-- return false means not to execute the default a href behavior -->
+	<a href='#' onclick='stopAnimation(); return false;'>STOP</a>	
+	<a href='#' onclick='setDirectionLeft(); return false;'>LEFT</a>
+	<a href='#' onclick='setDirectionRight(); return false;'>RIGHT</a>	
+	<a href='#' onclick='setDirectionUp(); return false;'>UP</a>
+	<a href='#' onclick='setDirectionDown(); return false;'>DOWN</a>		
+	<div id="ball">
+		
+	</div>
+</body>
+
+</html>
+<!--
+
+READING:
+http://www.barelyfitz.com/screencast/html-training/css/positioning/
+
+hw:
+* make it so that if you click 'start' multiple times it doesn't affect the animation (meaning it doesn't change the speed of the ball)
+* make a link to stop the animation
+* make a link to change the direction of the movement to go left
+  - make 4 links to set the direction (up/down/left/right)
+
+extra credit:
+* make it so that you can press any key to start the animation (search for jquery listen keypress)
+-->
