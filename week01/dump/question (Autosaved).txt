@@ -1,0 +1,9 @@
+difference between moveBall in line 17 and moveBall(); in line 26
+
+why are we using setTimeout instead of setInterval
+
+
+when do you use draw vs draw(), or moveBall vs moveBall()
+
+function moveBall(){}
+moveBall = function(){}

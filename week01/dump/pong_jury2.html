@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>week 1 - pong</title>
+<script src="jquery.js"> </script>
+<script type="text/javascript">
+
+var ball;
+
+var moveUp;
+var moveDown;
+var moveLeft;
+var moveRight;
+
+var animating = true;
+
+var moveBall;
+
+var is_goingright = true;
+var is_goingleft = false;
+var is_goingdown = false;
+var is_goingup = false;
+
+$(document).ready(function(){	
+	ball = $('#ball');
+
+	if (is_goingup){
+		moveUp = function(){
+			var current_top = parseInt(ball.css('top'));
+			var new_top = current_top - 20;	
+			ball.css('top', new_top);
+			
+			console.log(new_top);		
+		};
+	};
+
+	if (is_goingdown){
+		moveDown = function(){
+			var current_top = parseInt(ball.css('top'));
+			var new_top = current_top + 20;	
+			ball.css('top', new_top);
+
+			console.log(new_top);		
+		};
+	};
+
+	if (is_goingleft){
+		moveLeft = function(){
+			var current_left = parseInt(ball.css('left'));
+			var new_left = current_left - 20;	
+			ball.css('left', new_left);	
+
+			console.log(new_left);			
+		};
+	};
+	
+	if (is_goingright){
+		moveRight = function(){
+			var current_left = parseInt(ball.css('left'));
+			var new_left = current_left + 20;	
+			ball.css('left', new_left);	
+
+			console.log(new_left);				
+		};
+	};
+	
+});
+
+function draw(){	
+	moveRight();				
+	if(is_goingright){
+		setTimeout(draw,1000);
+	}
+};
+
+
+function startAnimation(){
+	draw();	
+	isAnimating = true;
+};
+
+function stopAnimation(){	
+	animating = false;
+};
+
+function startUp(){
+	
+	is_goingright = false;		
+	is_goingleft = false;
+	is_goingdown = false;
+	is_goingup = true;
+		
+	moveUp();
+				
+	if(animating){
+		setTimeout(draw,1000);
+	}
+}
+
+function startDown(){
+	
+	is_goingright = false;		
+	is_goingleft = false;
+	is_goingdown = true;
+	is_goingup = false;
+	
+	moveDown();
+				
+	if(animating){
+		setTimeout(draw,1000);
+	}
+}
+
+function startLeft(){
+	
+	is_goingright = false;		
+	is_goingleft = true;
+	is_goingdown = false;
+	is_goingup = false;
+		
+	moveLeft();
+				
+	if(animating){
+		setTimeout(draw,1000);
+	}
+}
+
+function startRight(){
+	
+	is_goingright = true;		
+	is_goingleft = false;
+	is_goingdown = false;
+	is_goingup = false;
+		
+	moveRight();
+				
+	if(animating){
+		setTimeout(draw,1000);
+	}
+}
+
+
+
+</script>
+
+<style type="text/css" > 
+#ball{
+	background-color:#FF0000;
+	width: 20px;
+	height: 20px;
+	position: absolute;
+	top: 100px;
+	left: 0px;
+}
+</style>
+
+</head>
+
+
+<body>
+	<a href='#' onclick='startAnimation(); return false;'>START</a> 
+	<a href='#' onclick='stopAnimation(); return false;'>STOP</a> 
+	<a href='#' onclick='startUp(); return false;'>UP</a> 
+	<a href='#' onclick='startDown(); return false;'>DOWN</a> 
+	<a href='#' onclick='startLeft(); return false;'>LEFT</a> 
+	<a href='#' onclick='startRight(); return false;'>RIGHT</a> 
+				
+	<!-- <button id="start">START</div>
+	<button id="stop">STOP</div>
+	<button id="up">UP</div>
+	<button id="down">DOWN</div>
+	<button id="left">LEFT</div>	
+	<button id="right">RIGHT</div> -->
+	
+	<div id="ball">
+	</div>	
+</body>
+
+</html>
