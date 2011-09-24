@@ -1,40 +1,73 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>Title of the document</title>
+<title>cory + jury + js</title>
 <script src="jquery.js"></script>
 <script type='text/javascript'>
 	var ball;
 	var moveBall;
+	
 	var shouldAnimate = true;
+	var isAnimating = false;
+	
 	var shouldGoRight = true;
 	var shouldGoDown = true;
-	var isAnimating = false;
+
+	var speed = 10;
+
 
 	$(document).ready( function() {
-		ball=$('#ball');
-	});
+		ball=$('#ball');		
+	})
 	
-	// hw: 
-	// *refactor calculateNewBallXPosition and calculateNewBallYPosition into calculateNewBallPosition
-	// calculateNewBallPosition should return an array just like getBallPosition does
-	// *refactor setBallXPosition and setBallYPosition into setBallPosition, which should take (arguments) either
-	// an array of [x,y] or x and y values
-	// * add two links, a "+" and a "-" to increase or decrease the speed of the ball
-	//
-	// extra credit: map the up/down/left/right keys to the directions -- search jquery docs for keypress
+	// from jQuery .keypress() explanation: "when catching special keystrokes such as arrow keys, .keydown() or .keyup() is a better choice."
+
+	// trigger with wasd
+	$(document).keypress(function(event){
+		if (event.which == 97){
+			setDirectionLeft();
+		}
+		if (event.which == 119){
+			setDirectionUp();	
+		}
+		if (event.which == 100){
+			setDirectionRight();
+		}
+		if (event.which == 115){
+			setDirectionDown();	
+		}					
+	})
+	
+	// trigger with arrow
+	$(document).keydown(function(event){
+		if (event.which == 37){
+			setDirectionLeft();
+		}
+		if (event.which == 38){
+			setDirectionUp();	
+		}
+		if (event.which == 39){
+			setDirectionRight();
+		}
+		if (event.which == 40){
+			setDirectionDown();	
+		}					
+	})
+
 	
 	function moveBall() {
 		var current_pos = getBallPosition();
 		var current_Xpos = current_pos[0];
 		var current_Ypos = current_pos[1];
 		
-		var new_Xpos = calculateNewBallXPosition(current_Xpos);
-		setBallXPosition(new_Xpos);
+		var new_pos = calculateNewBallPosition(current_Xpos, current_Ypos);		
+		var new_Xpos = new_pos[0];
+		var new_Ypos = new_pos[1];
 		
-		var new_Ypos = calculateNewBallYPosition(current_Ypos);
-		setBallYPosition(new_Ypos);		
-	};
+		setBallPosition(new_Xpos, new_Ypos);	
+	}
+	
+	// DIRECTION
 	
 	function setDirection(axis, direction) {
 		if (axis == 'x') {
@@ -56,8 +89,6 @@
 		}
 	}
 	
-	// INTERFACE FUNCTIONS //
-	
 	function setDirectionRight(){
 		setDirection('x','right');
 	}
@@ -74,8 +105,7 @@
 		setDirection('y', 'up');
 	}	
 	
-	// refactoring 
-	
+	// REFACTORING 
 	
 	function getBallPosition() {
 		var current_Xpos = parseInt(ball.css('left'));
@@ -83,34 +113,39 @@
 		return [current_Xpos,current_Ypos];
 	}
 
-	function calculateNewBallXPosition(current_pos) {
+	function calculateNewBallPosition(current_Xpos, current_Ypos) {
 		if (shouldGoRight) {
-			var new_pos = current_pos + 10; 		
+			var new_Xpos = current_Xpos + speed; 		
 		} else {
-			var new_pos = current_pos - 10; 
+			var new_Xpos = current_Xpos - speed; 
 		}
-		return new_pos;		
-	}
-
-	function calculateNewBallYPosition(current_pos) {
-		if (shouldGoDown) {
-			var new_pos = current_pos + 10; 		
-		} else {
-			var new_pos = current_pos - 10; 
-		}
-		return new_pos;		
-	}
 		
-	function setBallXPosition(new_pos) {
-		ball.css('left', new_pos); 
+		if (shouldGoDown) {
+			var new_Ypos = current_Ypos + speed; 		
+		} else {
+			var new_Ypos = current_Ypos - speed; 
+		}		
+		
+		return [new_Xpos, new_Ypos]		
+	}
+
+		
+	function setBallPosition(new_Xpos, new_Ypos) {
+		ball.css('left', new_Xpos); 
+		ball.css('top', new_Ypos);
 	}	
-
-	function setBallYPosition(new_pos) {
-		ball.css('top', new_pos); 
-	}		
 	
-
+	// SPEED
 	
+	function setSpeedPlus (){
+		speed++;
+	}
+	
+	function setSpeedMinus (){
+		speed--;
+	}
+	
+		
 		
 	function draw() {
 		moveBall();
@@ -127,45 +162,67 @@
 	function stopAnimation() {
 		shouldAnimate = false;
 	}
+	
+
 </script>
 
 <style type='text/css'>
+
 	#ball {
-		background-color:#FF0000;
-		height:20px;
-		width:20px;	
-		position: absolute;
-		top:0px;
-		left:0px;
+	background-color:#FF0000;
+	height:20px;
+	width:20px;	
+	position: absolute;
+	top:0px;
+	left:0px;
 	}
+
 </style>
 
 </head>
 
 <body>
-	<a href='#' onclick='startAnimation(); return false;'>START</a> <!-- return false means not to execute the default a href behavior -->
+	
+	<a href='#' onclick='startAnimation(); return false;'>START</a> <!-- return false: don't execute the default a href behavior -->
 	<a href='#' onclick='stopAnimation(); return false;'>STOP</a>	
 	<a href='#' onclick='setDirectionLeft(); return false;'>LEFT</a>
 	<a href='#' onclick='setDirectionRight(); return false;'>RIGHT</a>	
 	<a href='#' onclick='setDirectionUp(); return false;'>UP</a>
 	<a href='#' onclick='setDirectionDown(); return false;'>DOWN</a>		
-	<div id="ball">
-		
-	</div>
+	<a href='#' onclick='setSpeedPlus(); return false;'>+</a>
+	<a href='#' onclick='setSpeedMinus(); return false;'>-</a>	
+	
+	<div id="ball">	
+	</div>	
+	
 </body>
-
 </html>
-<!--
 
-READING:
-http://www.barelyfitz.com/screencast/html-training/css/positioning/
+
+
+<!-- week 1 class 1 
+
+READING: http://www.barelyfitz.com/screencast/html-training/css/positioning/
 
 hw:
 * make it so that if you click 'start' multiple times it doesn't affect the animation (meaning it doesn't change the speed of the ball)
 * make a link to stop the animation
-* make a link to change the direction of the movement to go left
-  - make 4 links to set the direction (up/down/left/right)
+* make a link to change the direction of the movement to go left - make 4 links to set the direction (up/down/left/right)
 
 extra credit:
 * make it so that you can press any key to start the animation (search for jquery listen keypress)
 -->
+
+
+<!-- week 1 class 2	
+hw: 
+*refactor calculateNewBallXPosition and calculateNewBallYPosition into calculateNewBallPosition
+calculateNewBallPosition should return an array just like getBallPosition does
+*refactor setBallXPosition and setBallYPosition into setBallPosition, which should take (arguments) either an array of [x,y] or x and y values
+* add two links, a "+" and a "-" to increase or decrease the speed of the ball
+
+extra credit: map the up/down/left/right keys to the directions (search jquery docs for keypress)
+-->
+
+
+
