@@ -1,0 +1,371 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>cory + jury + js</title>
+<script src="jquery.js"></script>
+<script type='text/javascript'>
+	var ball;
+	var stage;
+	var paddle;
+	var stageWidth;
+	var stageHeight;
+	var ballWidth;
+	var ballHeight;
+	var paddleHeight;
+	var moveBall;
+	
+	var shouldAnimate = true;
+	var isAnimating = false;
+	
+	var shouldGoRight = true;
+	var shouldGoDown = true;
+
+	var speed = 3.0;
+
+
+	$(document).ready( function() {
+		ball=$('#ball');
+		stage=$('#stage');
+		paddle=$('#paddle');
+		stageWidth = parseInt(stage.css('width'));
+		stageHeight = parseInt(stage.css('height'));
+		ballWidth = parseInt(ball.css('width'));
+		ballHeight = parseInt(ball.css('height'));	
+		paddleHeight = parseInt(paddle.css('height'));	
+	});
+	
+	// from jQuery .keypress() explanation: "when catching special keystrokes such as arrow keys, .keydown() or .keyup() is a better choice."
+
+	// trigger with wasd
+	$(document).keypress(function(event){
+		if (event.which == 97){
+			setDirectionLeft();
+		}
+		if (event.which == 119){
+			setDirectionUp();	
+		}
+		if (event.which == 100){
+			setDirectionRight();
+		}
+		if (event.which == 115){
+			setDirectionDown();	
+		}
+		
+		if (event.which == 61) {
+			setSpeedPlus();
+		}
+		if (event.which == 45) {
+			setSpeedMinus();
+		}
+		
+		if (event.which == 115) {
+			startAnimation();
+		}
+		
+		if (event.which == 46) {
+			stopAnimation();
+		}
+	});
+	
+	// trigger with arrow
+	$(document).keydown(function(event){
+		if (event.which == 38){
+			movePaddleUp();	
+		}
+
+		if (event.which == 40){
+			movePaddleDown();	
+		}					
+	});
+	
+	
+	function moveBall() {
+		var current_pos = getBallPosition();
+		var current_Xpos = current_pos[0];
+		var current_Ypos = current_pos[1];
+
+		var new_pos = calculateNewBallPosition(current_Xpos, current_Ypos);		
+		var new_Xpos = new_pos[0];
+		var new_Ypos = new_pos[1];
+		
+		detectBoundaries(new_Xpos, new_Ypos);
+		
+		checkHit();
+		
+		setBallPosition(new_Xpos, new_Ypos);
+	}
+
+	function getPaddlePosition() {
+		var paddle_Xpos = parseInt(paddle.css('left'));
+		var paddle_Ypos = parseInt(paddle.css('top'));	
+		
+		return [paddle_Xpos, paddle_Ypos];	
+	}
+
+	function movePaddleUp() {
+		var paddle_pos = getPaddlePosition();
+		var paddle_Ypos = paddle_pos[1];
+		
+	 	paddle_Ypos = paddle_Ypos-20;
+		paddle.css('top',paddle_Ypos);
+	}
+	
+	function movePaddleDown() {
+		var paddle_pos = getPaddlePosition();
+		var paddle_Ypos = paddle_pos[1];
+				
+		paddle_Ypos = paddle_Ypos+20;
+		paddle.css('top',paddle_Ypos);						
+	}
+	
+	function checkHit() {
+		var current_pos = getBallPosition();
+		var paddle_pos = getPaddlePosition();
+		var ballTop = current_pos[1];
+		var ballBottom = ballTop + ballHeight;
+		var ballRight = current_pos[0] + ballWidth;
+		var paddleLeft = paddle_pos[0];
+		var paddleTop = paddle_pos[1];
+		var paddleBottom = paddleTop + paddleHeight;		
+				
+		if (ballRight >= paddleLeft)	{					
+			if (paddleTop < ballTop  && paddleBottom > ballBottom) {
+				setDirectionLeft();
+			}
+		}
+	}
+	
+	
+	function detectPaddleBoundaries() {
+		// homework
+	}
+	
+	
+	
+	function detectBoundaries(new_Xpos, new_Ypos) {
+		if (new_Xpos <= 0){
+			setDirectionRight();
+		}
+		
+		if (new_Xpos+ballWidth >= stageWidth){
+			setDirectionLeft();
+		}
+		
+		if (new_Ypos <= 0) {
+			setDirectionDown();
+		}
+
+		if (new_Ypos+ballHeight >= stageHeight) {
+			setDirectionUp();
+		}		
+	}
+	
+	// DIRECTION
+	
+	function setDirection(axis, direction) {
+		if (axis == 'x') {
+			if (direction == 'right') {
+				shouldGoRight = true;
+			}
+			if (direction == 'left') {
+				shouldGoRight = false;
+			}
+		}
+		
+		if (axis == 'y') {
+			if (direction == 'up') {
+				shouldGoDown = false;
+			}
+			if (direction == 'down') {
+				shouldGoDown = true;
+			}
+		}
+	}
+	
+	function setDirectionRight(){
+		setDirection('x','right');
+	}
+	
+	function setDirectionLeft(){
+		setDirection('x','left');
+	}
+	
+	function setDirectionDown(){
+		setDirection('y','down');
+	}
+	
+	function setDirectionUp(){
+		setDirection('y', 'up');
+	}	
+	
+	// REFACTORING 
+	
+	function getBallPosition() {
+		var current_Xpos = parseInt(ball.css('left'));
+		var current_Ypos = parseInt(ball.css('top'));
+		return [current_Xpos,current_Ypos];
+	}
+
+	function calculateNewBallPosition(current_Xpos, current_Ypos) {
+		if (shouldGoRight) {
+			var new_Xpos = current_Xpos + speed; 		
+		} else {
+			var new_Xpos = current_Xpos - speed; 
+		}
+		
+		if (shouldGoDown) {
+			var new_Ypos = current_Ypos + speed; 		
+		} else {
+			var new_Ypos = current_Ypos - speed; 
+		}		
+		
+		return [new_Xpos, new_Ypos]		
+	}
+
+		
+	function setBallPosition(new_Xpos, new_Ypos) {
+		ball.css('left', new_Xpos); 
+		ball.css('top', new_Ypos);
+	}	
+	
+	// SPEED
+	
+	function setSpeedPlus (){
+		speed = speed * 1.2;
+	}
+	
+	function setSpeedMinus (){
+		speed = speed * 0.8;
+	}
+	
+		
+		
+	function draw() {
+		moveBall();
+		if (shouldAnimate) {
+			setTimeout(draw, 10);
+		}
+	}
+	
+	function startAnimation() {
+		shouldAnimate = true;
+		draw();
+	}
+	
+	function stopAnimation() {
+		shouldAnimate = false;
+	}
+	
+
+</script>
+
+<style type='text/css'>
+
+	#stage {
+	background-color:#333333;
+	width:800px;
+	height:400px;
+	position:relative;
+	margin-top:50px;
+	margin-left:auto;
+	margin-right:auto;
+	}
+
+	#ball {
+	background-color:#00FF00;
+	width:20px;		
+	height:20px;
+	position: absolute;
+	top:190px;
+	left:390px;
+	}
+	
+	#paddle {
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:770px;
+	}
+
+</style>
+
+</head>
+
+<body>
+	
+	<a href='#' onclick='startAnimation(); return false;'>START</a> <!-- return false: don't execute the default a href behavior -->
+	<a href='#' onclick='stopAnimation(); return false;'>STOP</a>	
+	<a href='#' onclick='setDirectionLeft(); return false;'>LEFT</a>
+	<a href='#' onclick='setDirectionRight(); return false;'>RIGHT</a>	
+	<a href='#' onclick='setDirectionUp(); return false;'>UP</a>
+	<a href='#' onclick='setDirectionDown(); return false;'>DOWN</a>		
+	<a href='#' onclick='setSpeedPlus(); return false;'>+</a>
+	<a href='#' onclick='setSpeedMinus(); return false;'>-</a>	
+	
+
+	<div id="stage">
+		<div id="ball">	
+		</div>	
+		<div id="paddle">
+		</div>
+	</div>
+	
+</body>
+</html>
+
+
+
+<!-- week 1 class 1 
+
+READING: http://www.barelyfitz.com/screencast/html-training/css/positioning/
+
+hw:
+* make it so that if you click 'start' multiple times it doesn't affect the animation (meaning it doesn't change the speed of the ball)
+* make a link to stop the animation
+* make a link to change the direction of the movement to go left - make 4 links to set the direction (up/down/left/right)
+
+extra credit:
+* make it so that you can press any key to start the animation (search for jquery listen keypress)
+-->
+
+
+<!-- week 1 class 2	
+hw: 
+*refactor calculateNewBallXPosition and calculateNewBallYPosition into calculateNewBallPosition
+calculateNewBallPosition should return an array just like getBallPosition does
+*refactor setBallXPosition and setBallYPosition into setBallPosition, which should take (arguments) either an array of [x,y] or x and y values
+* add two links, a "+" and a "-" to increase or decrease the speed of the ball
+
+extra credit: map the up/down/left/right keys to the directions (search jquery docs for keypress)
+-->
+
+<!-- week 2 class 3
+hw:
+*detect paddle boundaries -- don't allow the paddle to go too far up or down
+* add two variables: hits and misses
+*if the ball goes to the right and misses the paddle
+ -- console.log("missed <number of misses>"), increment misses
+* if it hits
+ -- console.log("hits <number of hits>"), increment hits
+* add a left paddle that you can move up and down with different keys, works the same as the right paddle
+* finish the codecademy -- especially the part about objects
+* write some JS code in the console that creates a dog and cat object that worksl ike this:
+> d = new Dog();
+> d.sayHi();
+"woof"
+> c = new Cat();
+> c.sayHi();
+"meow"
+
+EC create a scoreboard that shows the hits and misses (use jquery's ".html()" method to update those values)
+* add a "reset" button that resets score and starts a new game
+* make paddle move during animation loop instead of just reacting to keypresses (this will make it smooth -- make an calculateNewPaddlePosition(), updatePaddlePosition() functions etc just like for Ball and then make a movePaddle() method that goes in the draw() method)
+
+Reading:
+* OO javascript reading
+-->
+
+
+
