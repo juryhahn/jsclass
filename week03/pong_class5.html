@@ -1,0 +1,449 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>cory + jury + js</title>
+<script src="jquery.js"></script>
+<script type='text/javascript'>
+	var ball;
+	var ball_obj;
+	var stage;
+	var paddleLeft;
+	var paddleRight;
+	var stageW;
+	var stageH;
+	var ballWH;
+	var paddleH;
+	
+	var moveBall;
+	var movePaddle;
+	
+	var ballShouldAnimate = true;
+	var ballIsAnimating = false;
+	
+	var ballShouldGoRight = true;
+	var ballShouldGoDown = true;
+	var gameNeedsReset = false;
+
+	var leftPaddleShouldGoUp = false;
+	var leftPaddleShouldGoDown = false;
+	var rightPaddleShouldGoUp = false;
+	var rightPaddleShouldGoDown = false;	
+	
+	var ballSpeed = 3.0;
+	var setTimeoutDelay = 100;
+	
+	var leftmisses = 0;
+	var rightmisses = 0;
+	
+	$(document).ready(function() {
+		ball=$('#ball');
+		ball_obj = new Ball( ball );
+		stage=$('#stage');
+		paddleLeft=$('#paddleLeft');
+		paddleRight=$('#paddleRight');
+		stageW = parseInt(stage.css('width'));
+		stageH = parseInt(stage.css('height'));
+		ballWH = parseInt(ball.css('width'));
+		paddleH = parseInt(paddleLeft.css('height'));	
+	});
+	
+	function Ball(dom_reference) {
+		this.width = 20;
+		this.height = 20;
+		this.speed = ballSpeed;
+		this.x = 390;
+		this.y = 190;
+		this.ball_dom_reference = dom_reference; // we don't need to define such as var ball_dom_reference, but it's variable
+		
+		this.name = 'the ball';
+
+		this.setSpeedPlus = function() {
+			this.speed = this.speed * 1.2;
+		}
+		
+		this.setSpeedMinus = function() {
+			this.speed = this.speed * 0.8;			
+		}
+		
+		this.getBallPosition = function(){
+			this.x = parseInt(this.ball_dom_reference.css('left'));
+			this.y = parseInt(this.ball_dom_reference.css('top'));
+			return [this.x, this.y];
+		}
+		
+		this.calculateNewBallPosition = function(){
+			if(ballShouldGoRight) {
+				this.x = this.x + this.speed;
+			}else{
+				this.x = this.x - this.speed;
+			}			
+			if(ballShouldGoDown) {
+				this.y = this.y + this.speed;
+			}else{
+				this.y = this.y - this.speed;
+			}			
+		}
+		
+		this.setBallPosition = function(){
+			this.ball_dom_reference.css('left', this.x);
+			this.ball_dom_reference.css('top', this.y);			
+		}
+		
+		this.detectBoundaries = function(){
+			if (this.x <= 0) {
+				setDirectionRight();
+			}
+			if (this.x + this.width >= stageW) {
+				setDirectionLeft();
+			}
+
+			if (this.y <= 0) {
+				setDirectionDown();
+			}
+			if (this.y + this.height >= stageH) {
+				setDirectionUp();
+			}
+		}
+		
+		this.reset = function() {
+			this.x = 390;
+			this.y = 190;
+			this.setBallPosition();
+		}	
+	};
+	
+	
+	$(document).keypress(function(event){
+		if (event.which == 61) {
+			ball_obj.setSpeedPlus();
+		}
+		if (event.which == 45) {
+			ball_obj.setSpeedMinus();
+		}
+		if (event.which == 115) {
+			start();
+		}
+		if (event.which == 46) {
+			stop();
+		}
+		if (event.which == 97) {
+			leftPaddleShouldGoUp = true;
+		}
+		if (event.which == 122) {
+			leftPaddleShouldGoDown = true;
+		}		
+	});
+	
+	$(document).keydown(function(event){
+		if (event.which == 38){
+			rightPaddleShouldGoUp = true;
+		}
+		if (event.which == 40){
+			rightPaddleShouldGoDown = true;
+		}					
+	});
+
+
+	
+	// BRAIN //
+	
+	function moveBall() {
+		ball_obj.getBallPosition();
+		ball_obj.calculateNewBallPosition();		
+		ball_obj.detectBoundaries();
+		
+		if (gameNeedsReset) {
+			reset();
+		}else{			
+			ball_obj.setBallPosition();
+			checkHit();	
+		}		
+	};	
+	
+	function movePaddle() {
+		var current_pos = getPaddlePosition();
+		var paddleLeft_ypos = current_pos[1];	
+		var paddleRight_ypos = current_pos[3];
+		
+		var new_pos = calculateNewPaddlePosition(paddleLeft_ypos, paddleRight_ypos);
+		var new_paddleLeft_ypos = new_pos[0];
+		var new_paddleRight_ypos = new_pos[1];
+		
+		setPaddlePosition(new_paddleLeft_ypos, new_paddleRight_ypos);
+	};
+
+	function reset() {
+		gameNeedsReset = false;
+		ball_obj.reset();
+		setPaddlePosition(150,150);
+	};
+		
+	function checkHit() {
+		var paddle_pos = getPaddlePosition();		
+
+		var ballLeft = ball_obj.x;
+		var ballRight = ballLeft + ball_obj.width;
+		var ballTop = ball_obj.y;
+		var ballBottom = ballTop + ball_obj.height;
+
+		var LeftpaddleRight = paddle_pos[0]+10;
+		var LeftpaddleTop = paddle_pos[1];
+		
+		var RightpaddleLeft = paddle_pos[2];
+		var RightpaddleTop = paddle_pos[3];
+		
+		var LeftpaddleBottom = LeftpaddleTop + paddleH;	
+		var RightpaddleBottom = RightpaddleTop + paddleH;
+		
+		// CHECK LEFT PADDLE HIT
+		if (ballLeft < LeftpaddleRight) {					
+			if (LeftpaddleTop < ballTop  && LeftpaddleBottom> ballBottom) {
+				setDirectionRight();
+			} 			
+			if (LeftpaddleTop > ballTop || LeftpaddleBottom < ballBottom) {
+				leftMiss();
+				gameNeedsReset = true;
+			} 
+		}
+		
+		// CHECK RIGHT PADDLE HIT		
+		if (ballRight > RightpaddleLeft) {					
+			if (RightpaddleTop < ballTop  && RightpaddleBottom> ballBottom) {
+				setDirectionLeft();
+			} 			
+			if (RightpaddleTop > ballTop || RightpaddleBottom < ballBottom) {
+				rightMiss();
+				gameNeedsReset = true;							
+			} 
+		} 
+	};
+	
+	function leftMiss() {					
+		leftmisses++;
+		$("#rightscore").html(leftmisses);
+	};	
+		
+	function rightMiss() {
+		rightmisses++;
+		$("#leftscore").html(rightmisses);
+	};
+			
+
+		
+
+	// PADDLE OPERATION //
+
+	function getPaddlePosition() {
+		var paddleLeft_xpos = parseInt(paddleLeft.css('left'));			
+		var paddleLeft_ypos = parseInt(paddleLeft.css('top'));			
+		var paddleRight_xpos = parseInt(paddleRight.css('left'));		
+		var paddleRight_ypos = parseInt(paddleRight.css('top'));
+		return [paddleLeft_xpos, paddleLeft_ypos, paddleRight_xpos, paddleRight_ypos];	
+	};
+
+	function calculateNewPaddlePosition(paddleLeft_ypos, paddleRight_ypos) {		
+		if (leftPaddleShouldGoDown) {
+			if (paddleLeft_ypos<stageH-paddleH) {
+				var new_paddleLeft_ypos = paddleLeft_ypos + 10;	
+				leftPaddleShouldGoDown = false;	
+			}			
+		}
+		if (leftPaddleShouldGoUp) {
+			if (paddleLeft_ypos>0) {
+				var new_paddleLeft_ypos = paddleLeft_ypos - 10;
+				leftPaddleShouldGoUp = false;
+			}
+		}
+		if (rightPaddleShouldGoDown) {
+			if (paddleRight_ypos<stageH-paddleH) {
+				var new_paddleRight_ypos = paddleRight_ypos + 10;
+				rightPaddleShouldGoDown = false;
+			}			
+		}	
+		if (rightPaddleShouldGoUp) {
+			if (paddleRight_ypos>0) {
+				var new_paddleRight_ypos = paddleRight_ypos - 10;
+				rightPaddleShouldGoUp = false;
+			}
+		}			
+		return [new_paddleLeft_ypos, new_paddleRight_ypos];				
+	};
+	
+	function setPaddlePosition(new_paddleLeft_ypos ,new_paddleRight_ypos) {
+		paddleLeft.css('top', new_paddleLeft_ypos);
+		paddleRight.css('top', new_paddleRight_ypos);
+	};	
+
+	
+		
+	// BALL POSITIONING //
+	
+		
+	// BALL DIRECTION //
+	
+	function setDirection(axis, direction) {
+		if (axis == 'x') {
+			if (direction == 'right') {
+				ballShouldGoRight = true;
+			}
+			if (direction == 'left') {
+				ballShouldGoRight = false;
+			}
+		}
+		
+		if (axis == 'y') {
+			if (direction == 'up') {
+				ballShouldGoDown = false;
+			}
+			if (direction == 'down') {
+				ballShouldGoDown = true;
+			}
+		}
+	};
+	
+	function setDirectionRight() {
+		setDirection('x','right');
+	};
+	
+	function setDirectionLeft() {
+		setDirection('x','left');
+	};
+	
+	function setDirectionDown() {
+		setDirection('y','down');
+	};
+
+	function setDirectionUp() {
+		setDirection('y','up');
+	};	
+	
+
+				
+	// OPERATOR //
+	
+	function update() {
+		moveBall();
+		movePaddle();
+		if (ballShouldAnimate) {
+			setTimeout(update, setTimeoutDelay);
+		}
+	};
+	
+	function start() {
+		ballShouldAnimate = true;
+		update();
+	};
+	
+	function stop() {
+		ballShouldAnimate = false;
+	};
+
+</script>
+
+<style type='text/css'>	
+	#stage{
+	background-color:#333333;
+	width:800px;
+	height:400px;
+	position:relative;
+	margin-top:50px;
+	margin-left:auto;
+	margin-right:auto;		
+	}
+	
+	#ball{
+	background-color:#00FF00;
+	width:20px;		
+	height:20px;
+	position: absolute;
+	top:190px;
+	left:390px;		
+	}
+	
+	#paddleLeft{
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:20px;			
+	}
+	
+	#paddleRight{
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:770px;		
+	}
+
+	#leftscore{
+	position: absolute;		
+	top:30px;
+	left:100px;
+	color:#FF0000;
+	font-size:30px;
+	}	
+	
+	#rightscore{
+	position: absolute;
+	top:30px;
+	left:200px;	
+	color:#FF0000;
+	font-size:30px;
+	}	
+</style>
+
+</head>
+
+<body>
+
+	<a href='#' onclick='start(); return false;'>START</a> 
+	<a href='#' onclick='stop(); return false;'>STOP</a>	
+	<a href='#' onclick='reset(); return false;'>RESET</a>		
+	<a href='#' onclick='setDirectionLeft(); return false;'>LEFT</a>
+	<a href='#' onclick='setDirectionRight(); return false;'>RIGHT</a>	
+	<a href='#' onclick='setDirectionUp(); return false;'>UP</a>
+	<a href='#' onclick='setDirectionDown(); return false;'>DOWN</a>		
+	<a href='#' onclick='setSpeedPlus(); return false;'>+</a>
+	<a href='#' onclick='setSpeedMinus(); return false;'>-</a>	
+	
+	<div id='leftscore'>
+	</div>	
+
+	<div id='rightscore'>
+	</div>	
+
+	<div id='stage'>
+		<div id='paddleLeft'>
+		</div>
+		<div id='ball'>
+		</div>
+		<div id='paddleRight'>
+		</div>
+	<div>
+
+</body>
+
+</html>
+
+
+<!--
+HW:
+
+* make checkHit a ball method: ball_obj.checkHit, and pass in two paddles, like: ball_obj.checkHit(left_paddle, right_paddle)
+* create a Paddle Object:  function Paddle() {...}
+* the paddle object should know its position and be able to update itself on the screen
+* get rid of as many global variables as you can (such as ball, ballWH, ballShouldGoDown, ballSpeed, etc.).  Some of these you are already not using (like ballSpeed), but others like ballShouldGoDown need to be added as properties of the ball object  itself first.
+* speed up the framerate of the animation.  The more frames, the better the edge detection will work.
+
+e.c.:
+  * find one framework or js library from the javascript weekly emails (fromany week) and use that library to do something. Anything.
+  * make an object for a Player (with property of score, and also property of Paddle), and then use that to update the score.
+
+
+read:
+   * http://www.phpied.com/3-ways-to-define-a-javascript-class/
+
+-->

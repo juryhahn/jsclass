@@ -1,0 +1,430 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>cory + jury + js</title>
+<script src="jquery.js"></script>
+<script type='text/javascript'>
+	var ball;
+	var stage;
+	var paddleLeft;
+	var paddleRight;
+	var stageW;
+	var stageH;
+	var ballWH;
+	var paddleH;
+	
+	var moveBall;
+	var movePaddle;
+	
+	var ballShouldAnimate = true;
+	var ballIsAnimating = false;
+	
+	var ballShouldGoRight = true;
+	var ballShouldGoDown = true;
+	var gameNeedsReset = false;
+
+	var leftPaddleShouldGoUp = false;
+	var leftPaddleShouldGoDown = false;
+	var rightPaddleShouldGoUp = false;
+	var rightPaddleShouldGoDown = false;	
+	
+	var ballSpeed = 3.0;
+	var setTimeoutDelay = 100;
+	
+	var leftmisses = 0;
+	var rightmisses = 0;
+	
+	$(document).ready(function() {
+		ball=$('#ball');
+		stage=$('#stage');
+		paddleLeft=$('#paddleLeft');
+		paddleRight=$('#paddleRight');
+		stageW = parseInt(stage.css('width'));
+		stageH = parseInt(stage.css('height'));
+		ballWH = parseInt(ball.css('width'));
+		paddleH = parseInt(paddleLeft.css('height'));	
+	});
+	
+	$(document).keypress(function(event){
+		if (event.which == 61) {
+			setSpeedPlus();
+		}
+		if (event.which == 45) {
+			setSpeedMinus();
+		}
+		if (event.which == 115) {
+			start();
+		}
+		if (event.which == 46) {
+			stop();
+		}
+		if (event.which == 97) {
+			leftPaddleShouldGoUp = true;
+		}
+		if (event.which == 122) {
+			leftPaddleShouldGoDown = true;
+		}		
+	});
+	
+	$(document).keydown(function(event){
+		if (event.which == 38){
+			rightPaddleShouldGoUp = true;
+		}
+		if (event.which == 40){
+			rightPaddleShouldGoDown = true;
+		}					
+	});
+
+
+	
+	// BRAIN //
+	
+	function moveBall() {
+		var current_pos = getBallPosition();
+		var current_xpos = current_pos[0];
+		var current_ypos = current_pos[1];
+		
+		var new_pos = calculateNewBallPosition(current_xpos, current_ypos);
+		var new_xpos = new_pos[0];
+		var new_ypos = new_pos[1];
+		
+		detectBoundaries(new_xpos, new_ypos);
+		
+		if (gameNeedsReset) {
+			reset();
+		}else{
+			checkHit();
+			setBallPosition(new_xpos, new_ypos);
+		}		
+	};	
+	
+	function movePaddle() {
+		var current_pos = getPaddlePosition();
+		var paddleLeft_ypos = current_pos[1];	
+		var paddleRight_ypos = current_pos[3];
+		
+		var new_pos = calculateNewPaddlePosition(paddleLeft_ypos, paddleRight_ypos);
+		var new_paddleLeft_ypos = new_pos[0];
+		var new_paddleRight_ypos = new_pos[1];
+		
+		setPaddlePosition(new_paddleLeft_ypos, new_paddleRight_ypos);
+	};
+
+	function reset() {
+		gameNeedsReset = false;
+		setBallPosition(390,190);
+		setPaddlePosition(150,150);
+	};
+		
+	function checkHit() {
+		var current_pos = getBallPosition();
+		var paddle_pos = getPaddlePosition();		
+
+		var ballLeft = current_pos[0];
+		var ballRight = current_pos[0] + ballWH;
+		var ballTop = current_pos[1];
+		var ballBottom = ballTop + ballWH;
+
+		var LeftpaddleRight = paddle_pos[0]+10;
+		var LeftpaddleTop = paddle_pos[1];
+		
+		var RightpaddleLeft = paddle_pos[2];
+		var RightpaddleTop = paddle_pos[3];
+		
+		var LeftpaddleBottom = LeftpaddleTop + paddleH;	
+		var RightpaddleBottom = RightpaddleTop + paddleH;
+		
+		// CHECK LEFT PADDLE HIT
+		if (ballLeft < LeftpaddleRight) {					
+			if (LeftpaddleTop < ballTop  && LeftpaddleBottom> ballBottom) {
+				setDirectionRight();
+			} 			
+			if (LeftpaddleTop > ballTop || LeftpaddleBottom < ballBottom) {
+				leftMiss();
+				gameNeedsReset = true;
+			} 
+		}
+		
+		// CHECK RIGHT PADDLE HIT		
+		if (ballRight > RightpaddleLeft) {					
+			if (RightpaddleTop < ballTop  && RightpaddleBottom> ballBottom) {
+				setDirectionLeft();
+			} 			
+			if (RightpaddleTop > ballTop || RightpaddleBottom < ballBottom) {
+				rightMiss();
+				gameNeedsReset = true;							
+			} 
+		} 
+	};
+	
+	function leftMiss() {					
+		leftmisses++;
+		$("#rightscore").html(leftmisses);
+	};	
+		
+	function rightMiss() {
+		rightmisses++;
+		$("#leftscore").html(rightmisses);
+	};
+			
+	function detectBoundaries(new_xpos, new_ypos) {
+		if (new_xpos <= 0) {
+			setDirectionRight();
+		}
+		if (new_xpos + ballWH >= stageW) {
+			setDirectionLeft();
+		}
+		
+		/*
+		if (new_xpos + ballWH >= stageW) {
+			gameNeedsReset = true;
+		}else{
+			gameNeedsReset = false;
+		}
+		*/
+		
+		if (new_ypos <= 0) {
+			setDirectionDown();
+		}
+		if (new_ypos + ballWH >= stageH) {
+			setDirectionUp();
+		}
+	};
+
+		
+
+	// PADDLE OPERATION //
+
+	function getPaddlePosition() {
+		var paddleLeft_xpos = parseInt(paddleLeft.css('left'));			
+		var paddleLeft_ypos = parseInt(paddleLeft.css('top'));			
+		var paddleRight_xpos = parseInt(paddleRight.css('left'));		
+		var paddleRight_ypos = parseInt(paddleRight.css('top'));
+		return [paddleLeft_xpos, paddleLeft_ypos, paddleRight_xpos, paddleRight_ypos];	
+	};
+
+	function calculateNewPaddlePosition(paddleLeft_ypos, paddleRight_ypos) {		
+		if (leftPaddleShouldGoDown) {
+			if (paddleLeft_ypos<stageH-paddleH) {
+				var new_paddleLeft_ypos = paddleLeft_ypos + 10;	
+				leftPaddleShouldGoDown = false;	
+			}			
+		}
+		if (leftPaddleShouldGoUp) {
+			if (paddleLeft_ypos>0) {
+				var new_paddleLeft_ypos = paddleLeft_ypos - 10;
+				leftPaddleShouldGoUp = false;
+			}
+		}
+		if (rightPaddleShouldGoDown) {
+			if (paddleRight_ypos<stageH-paddleH) {
+				var new_paddleRight_ypos = paddleRight_ypos + 10;
+				rightPaddleShouldGoDown = false;
+			}			
+		}	
+		if (rightPaddleShouldGoUp) {
+			if (paddleRight_ypos>0) {
+				var new_paddleRight_ypos = paddleRight_ypos - 10;
+				rightPaddleShouldGoUp = false;
+			}
+		}			
+		return [new_paddleLeft_ypos, new_paddleRight_ypos];				
+	};
+	
+	function setPaddlePosition(new_paddleLeft_ypos ,new_paddleRight_ypos) {
+		paddleLeft.css('top', new_paddleLeft_ypos);
+		paddleRight.css('top', new_paddleRight_ypos);
+	};	
+
+	
+		
+	// BALL POSITIONING //
+	
+	function getBallPosition() {
+		var current_xpos = parseInt(ball.css('left'));
+		var current_ypos = parseInt(ball.css('top'));
+		return [current_xpos, current_ypos];
+	};
+	
+	function calculateNewBallPosition(current_xpos, current_ypos) {
+		if(ballShouldGoRight) {
+			var new_xpos = current_xpos + ballSpeed;
+		}else{
+			var new_xpos = current_xpos - ballSpeed;
+		}
+		
+		if (ballShouldGoDown) {
+			var new_ypos = current_ypos + ballSpeed;
+		}else{
+			var new_ypos = current_ypos - ballSpeed;
+		}
+		return [new_xpos, new_ypos];
+	};
+		
+	function setBallPosition(new_xpos, new_ypos) {
+		ball.css('left', new_xpos);
+		ball.css('top', new_ypos);
+	};	
+	
+
+
+	// BALL DIRECTION //
+	
+	function setDirection(axis, direction) {
+		if (axis == 'x') {
+			if (direction == 'right') {
+				ballShouldGoRight = true;
+			}
+			if (direction == 'left') {
+				ballShouldGoRight = false;
+			}
+		}
+		
+		if (axis == 'y') {
+			if (direction == 'up') {
+				ballShouldGoDown = false;
+			}
+			if (direction == 'down') {
+				ballShouldGoDown = true;
+			}
+		}
+	};
+	
+	function setDirectionRight() {
+		setDirection('x','right');
+	};
+	
+	function setDirectionLeft() {
+		setDirection('x','left');
+	};
+	
+	function setDirectionDown() {
+		setDirection('y','down');
+	};
+
+	function setDirectionUp() {
+		setDirection('y','up');
+	};	
+	
+		
+	
+	// SPEED //
+		
+	function setSpeedPlus() {
+		ballSpeed = ballSpeed * 1.2;		
+	};
+	
+	function setSpeedMinus() {
+		ballSpeed = ballSpeed * 0.8;
+	};
+	
+		
+				
+	// OPERATOR //
+	
+	function update() {
+		moveBall();
+		movePaddle();
+		if (ballShouldAnimate) {
+			setTimeout(update, setTimeoutDelay);
+		}
+	};
+	
+	function start() {
+		ballShouldAnimate = true;
+		update();
+	};
+	
+	function stop() {
+		ballShouldAnimate = false;
+	};
+
+</script>
+
+<style type='text/css'>	
+	#stage{
+	background-color:#333333;
+	width:800px;
+	height:400px;
+	position:relative;
+	margin-top:50px;
+	margin-left:auto;
+	margin-right:auto;		
+	}
+	
+	#ball{
+	background-color:#00FF00;
+	width:20px;		
+	height:20px;
+	position: absolute;
+	top:190px;
+	left:390px;		
+	}
+	
+	#paddleLeft{
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:20px;			
+	}
+	
+	#paddleRight{
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:770px;		
+	}
+
+	#leftscore{
+	position: absolute;		
+	top:30px;
+	left:100px;
+	color:#FF0000;
+	font-size:30px;
+	}	
+	
+	#rightscore{
+	position: absolute;
+	top:30px;
+	left:200px;	
+	color:#FF0000;
+	font-size:30px;
+	}	
+</style>
+
+</head>
+
+<body>
+
+	<a href='#' onclick='start(); return false;'>START</a> 
+	<a href='#' onclick='stop(); return false;'>STOP</a>	
+	<a href='#' onclick='reset(); return false;'>RESET</a>		
+	<a href='#' onclick='setDirectionLeft(); return false;'>LEFT</a>
+	<a href='#' onclick='setDirectionRight(); return false;'>RIGHT</a>	
+	<a href='#' onclick='setDirectionUp(); return false;'>UP</a>
+	<a href='#' onclick='setDirectionDown(); return false;'>DOWN</a>		
+	<a href='#' onclick='setSpeedPlus(); return false;'>+</a>
+	<a href='#' onclick='setSpeedMinus(); return false;'>-</a>	
+	
+	<div id='leftscore'>
+	</div>	
+
+	<div id='rightscore'>
+	</div>	
+
+	<div id='stage'>
+		<div id='paddleLeft'>
+		</div>
+		<div id='ball'>
+		</div>
+		<div id='paddleRight'>
+		</div>
+	<div>
+
+</body>
+
+</html>

@@ -7,6 +7,7 @@
 	var ball;
 	var stage;
 	var paddle;
+	var leftpaddle;
 	var stageWidth;
 	var stageHeight;
 	var ballWidth;
@@ -19,14 +20,19 @@
 	
 	var shouldGoRight = true;
 	var shouldGoDown = true;
+	var gameNeedsReset = false;
 
 	var speed = 3.0;
+	var moveball_delay = 100;
 
+	var hit = 0;
+	var miss = 0;
 
 	$(document).ready( function() {
 		ball=$('#ball');
 		stage=$('#stage');
 		paddle=$('#paddle');
+		leftpaddle=$('#leftpaddle');
 		stageWidth = parseInt(stage.css('width'));
 		stageHeight = parseInt(stage.css('height'));
 		ballWidth = parseInt(ball.css('width'));
@@ -38,6 +44,7 @@
 
 	// trigger with wasd
 	$(document).keypress(function(event){
+		/*
 		if (event.which == 97){
 			setDirectionLeft();
 		}
@@ -50,6 +57,7 @@
 		if (event.which == 115){
 			setDirectionDown();	
 		}
+		*/
 		
 		if (event.which == 61) {
 			setSpeedPlus();
@@ -65,6 +73,14 @@
 		if (event.which == 46) {
 			stopAnimation();
 		}
+		
+		if (event.which == 97) {
+			moveLeftPaddleUp();
+		}
+		
+		if (event.which == 122) {
+			moveLeftPaddleDown();
+		}		
 	});
 	
 	// trigger with arrow
@@ -78,7 +94,6 @@
 		}					
 	});
 	
-	
 	function moveBall() {
 		var current_pos = getBallPosition();
 		var current_Xpos = current_pos[0];
@@ -88,72 +103,110 @@
 		var new_Xpos = new_pos[0];
 		var new_Ypos = new_pos[1];
 		
+		console.log("calling detectBoundaries xpos:",new_Xpos,"ypos:",new_Ypos);
 		detectBoundaries(new_Xpos, new_Ypos);
 		
-		checkHit();
-		
-		setBallPosition(new_Xpos, new_Ypos);
+		if (gameNeedsReset) {
+			reset();
+		} else {
+			checkHit();
+
+			console.log("calling set ball position from moveBall. xpos",new_Xpos,"ypos",new_Ypos);
+			setBallPosition(new_Xpos, new_Ypos);
+		}		
+	}
+
+	function reset() {
+		setBallPosition(390,190);
 	}
 
 	function getPaddlePosition() {
 		var paddle_Xpos = parseInt(paddle.css('left'));
-		var paddle_Ypos = parseInt(paddle.css('top'));	
+		var paddle_Ypos = parseInt(paddle.css('top'));
+
+		var leftpaddle_Xpos = parseInt(leftpaddle.css('left'));
+		var leftpaddle_Ypos = parseInt(leftpaddle.css('top'));			
 		
-		return [paddle_Xpos, paddle_Ypos];	
+		return [paddle_Xpos, paddle_Ypos, leftpaddle_Xpos, leftpaddle_Ypos];	
 	}
 
 	function movePaddleUp() {
 		var paddle_pos = getPaddlePosition();
 		var paddle_Ypos = paddle_pos[1];
 		
-		if (paddle_Ypos>=10){
-	 		paddle_Ypos = paddle_Ypos-20			
+		if (paddle_Ypos>0){
+	 		paddle_Ypos = paddle_Ypos-10			
 		}
+
 		paddle.css('top',paddle_Ypos);
 	}
+	
+	function moveLeftPaddleUp() {
+		var paddle_pos = getPaddlePosition();
+		var leftpaddle_Ypos = paddle_pos[3];
+
+		if (leftpaddle_Ypos>0){
+	 		leftpaddle_Ypos = leftpaddle_Ypos-10			
+		}
+
+		leftpaddle.css('top',leftpaddle_Ypos);
+	}	
 	
 	function movePaddleDown() {
 		var paddle_pos = getPaddlePosition();
 		var paddle_Ypos = paddle_pos[1];
 		
 		if (paddle_Ypos<stageHeight-paddleHeight){
-			paddle_Ypos = paddle_Ypos+20;			
+			paddle_Ypos = paddle_Ypos+10;			
 		}
 
 		paddle.css('top',paddle_Ypos);						
 	}
-	
+
+	function moveLeftPaddleDown() {
+		var paddle_pos = getPaddlePosition();
+		var leftpaddle_Ypos = paddle_pos[3];
+		
+		if (leftpaddle_Ypos<stageHeight-paddleHeight){
+			leftpaddle_Ypos = leftpaddle_Ypos+10;			
+		}
+
+		leftpaddle.css('top',leftpaddle_Ypos);						
+	}
+		
 	function checkHit() {
 		var current_pos = getBallPosition();
-		var paddle_pos = getPaddlePosition();
+		var paddle_pos = getPaddlePosition();		
 		var ballTop = current_pos[1];
 		var ballBottom = ballTop + ballHeight;
 		var ballRight = current_pos[0] + ballWidth;
 		var paddleLeft = paddle_pos[0];
 		var paddleTop = paddle_pos[1];
-		var paddleBottom = paddleTop + paddleHeight;		
+		var paddleBottom = paddleTop + paddleHeight;	
 				
-		if (ballRight >= paddleLeft)	{					
-			if (paddleTop < ballTop  && paddleBottom > ballBottom) {
+		if (ballRight > paddleLeft)	{					
+			if (paddleTop < ballTop  && paddleBottom> ballBottom) {
 				setDirectionLeft();
-			}
-		}
+				hit++;
+				console.log("hits " + hit);
+			} 			
+			if (paddleTop > ballTop || paddleBottom < ballBottom) {
+				miss++;
+				console.log("missed " + miss);
+			} 
+		} 	
 	}
-	
-	
-	function detectPaddleBoundaries() {
-		// homework
-	}
-	
-	
-	
+		
 	function detectBoundaries(new_Xpos, new_Ypos) {
 		if (new_Xpos <= 0){
 			setDirectionRight();
 		}
 		
 		if (new_Xpos+ballWidth >= stageWidth){
-			setDirectionLeft();
+			console.log("calling reset from detectBoundaries. xpos:",new_Xpos,"ypos:",new_Ypos);
+			gameNeedsReset = true;
+		} else {
+			gameNeedsReset = false;
 		}
 		
 		if (new_Ypos <= 0) {
@@ -229,6 +282,7 @@
 
 		
 	function setBallPosition(new_Xpos, new_Ypos) {
+		console.log("setBallPosition. xpos:",new_Xpos,"ypos:",new_Ypos);
 		ball.css('left', new_Xpos); 
 		ball.css('top', new_Ypos);
 	}	
@@ -248,7 +302,7 @@
 	function draw() {
 		moveBall();
 		if (shouldAnimate) {
-			setTimeout(draw, 10);
+			setTimeout(draw, moveball_delay);
 		}
 	}
 	
@@ -265,7 +319,6 @@
 </script>
 
 <style type='text/css'>
-
 	#stage {
 	background-color:#333333;
 	width:800px;
@@ -285,6 +338,15 @@
 	left:390px;
 	}
 	
+	#leftpaddle {
+	background-color:#00FF00;
+	width:10px;
+	height:80px;
+	position: absolute;
+	top:150px;
+	left:20px;		
+	}
+				
 	#paddle {
 	background-color:#00FF00;
 	width:10px;
@@ -311,6 +373,8 @@
 	
 
 	<div id="stage">
+		<div id="leftpaddle">
+		</div>
 		<div id="ball">	
 		</div>	
 		<div id="paddle">
@@ -354,7 +418,7 @@ hw:
  -- console.log("missed <number of misses>"), increment misses
 * if it hits
  -- console.log("hits <number of hits>"), increment hits
-* add a left paddle that you can move up and down with different keys, works the same as the right paddle
+* add a paddle that you can move up and down with different keys, works the same as the right paddle
 * finish the codecademy -- especially the part about objects
 * write some JS code in the console that creates a dog and cat object that worksl ike this:
 > d = new Dog();
